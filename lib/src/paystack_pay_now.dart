@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:pay_with_paystack/src/widgets/app_loader.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class PaystackPayNow extends StatefulWidget {
@@ -16,7 +17,8 @@ class PaystackPayNow extends StatefulWidget {
   final String? plan;
   final metadata;
   final paymentChannel;
-  final void Function() transactionCompleted;
+  final void Function(Map<String, dynamic> decodedRespBody)
+      transactionCompleted;
   final void Function(String reason) transactionNotCompleted;
 
   const PaystackPayNow({
@@ -109,9 +111,9 @@ class _PaystackPayNowState extends State<PaystackPayNow> {
     }
     if (response!.statusCode == 200) {
       var decodedRespBody = jsonDecode(response.body);
-      print(decodedRespBody.toString());
+      // print(decodedRespBody.toString());
       if (decodedRespBody["data"]["status"] == "success") {
-        widget.transactionCompleted();
+        widget.transactionCompleted(decodedRespBody);
       } else {
         widget.transactionNotCompleted(
             decodedRespBody["data"]["status"].toString());
@@ -177,14 +179,17 @@ class _PaystackPayNowState extends State<PaystackPayNow> {
                   automaticallyImplyLeading: false,
                   actions: [
                     InkWell(
-                        onTap: () async {
-                          await _checkTransactionStatus(
-                                  snapshot.data!.reference)
-                              .then((value) {
-                            Navigator.of(context).pop();
-                          });
-                        },
-                        child: const Icon(Icons.close)),
+                      onTap: () async {
+                        await _checkTransactionStatus(snapshot.data!.reference)
+                            .then((value) {
+                          Navigator.of(context).pop();
+                        });
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.only(right: 8),
+                        child: Icon(Icons.close, size: 24),
+                      ),
+                    ),
                   ],
                 ),
                 body: WebViewWidget(
@@ -203,7 +208,10 @@ class _PaystackPayNowState extends State<PaystackPayNow> {
 
             return const Material(
               child: Center(
-                child: CircularProgressIndicator(),
+                child: AppLoader(
+                  color: Color(0xffF0174B),
+                  size: 24,
+                ),
               ),
             );
           }),
