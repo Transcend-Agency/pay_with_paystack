@@ -1,10 +1,12 @@
 // ignore_for_file: prefer_typing_uninitialized_variables, use_build_context_synchronously
 
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:pay_with_paystack/src/widgets/app_loader.dart';
+import 'package:pay_with_paystack/src/widgets/custom_app_bar.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class PaystackPayNow extends StatefulWidget {
@@ -174,31 +176,22 @@ class _PaystackPayNowState extends State<PaystackPayNow> {
                   ),
                 )
                 ..loadRequest(Uri.parse(snapshot.data!.authUrl));
+
               return Scaffold(
-                appBar: AppBar(
-                  automaticallyImplyLeading: false,
-                  actions: [
-                    InkWell(
-                      onTap: () async {
-                        await _checkTransactionStatus(snapshot.data!.reference)
-                            .then((value) {
-                          Navigator.of(context).pop();
-                        });
-                      },
-                      child: const Padding(
-                        padding: EdgeInsets.only(right: 8),
-                        child: Icon(Icons.close, size: 30),
-                      ),
-                    ),
-                  ],
+                appBar: CustomAppBar(
+                  onCloseTap: () async {
+                    await _checkTransactionStatus(snapshot.data!.reference)
+                        .then((value) {
+                      Navigator.of(context).pop();
+                    });
+                  },
                 ),
-                body: WebViewWidget(
-                  controller: controller,
-                ),
+                body: WebViewWidget(controller: controller),
               );
             }
 
             if (snapshot.hasError) {
+              log('The error is ${snapshot.error}');
               return Material(
                 child: Center(
                   child: Text('${snapshot.error}'),
