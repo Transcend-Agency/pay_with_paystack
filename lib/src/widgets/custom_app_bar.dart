@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_icon_button.dart';
+
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CustomAppBar({super.key, this.onCloseTap});
 
@@ -20,14 +22,15 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       child: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         actions: [
-          InkWell(
-            onTap: onCloseTap,
-            child: const Padding(
-              padding: EdgeInsets.only(right: 12),
-              child: Icon(Icons.close, size: 26),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: AppIconButton(
+              onTap: onCloseTap,
+              icon: Icons.close,
             ),
           ),
         ],

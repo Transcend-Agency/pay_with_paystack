@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -43,22 +44,18 @@ class PaystackPayNow extends StatefulWidget {
 }
 
 class _PaystackPayNowState extends State<PaystackPayNow> {
-  /// Makes HTTP Request to Paystack for access to make payment.
   Future<PaystackRequestResponse> _makePaymentRequest() async {
     http.Response? response;
     final amount = widget.amount * 100;
 
     try {
-      /// Sending Data to paystack.
+      // Sending data to Paystack.
       response = await http.post(
-        /// Url to send data to
         Uri.parse('https://api.paystack.co/transaction/initialize'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${widget.secretKey}',
         },
-
-        /// Data to send to the URL.
         body: jsonEncode({
           "email": widget.email,
           "amount": amount.toString(),
@@ -71,21 +68,28 @@ class _PaystackPayNowState extends State<PaystackPayNow> {
         }),
       );
     } on Exception catch (e) {
-      /// In the event of an exception, take the user back and show a SnackBar error.
+      // Catch both SocketException and HttpException here
+      String errorMessage = "An unexpected error occurred. Please try again.";
+
+      // Check if the exception is a SocketException or HttpException
+      if (e is SocketException) {
+        errorMessage =
+            "No internet connection. Please check your connection and try again.";
+      } else if (e is HttpException) {
+        errorMessage = "Please check your internet connection.";
+      }
+
       if (context.mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        var snackBar =
-            SnackBar(content: Text("Fatal error occurred, ${e.toString()}"));
-        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+        widget.transactionNotCompleted(errorMessage);
       }
     }
 
-    if (response!.statusCode == 200) {
+    if (response != null && response.statusCode == 200) {
       return PaystackRequestResponse.fromJson(jsonDecode(response.body));
     } else {
       throw Exception(
-          "Response Code: ${response.statusCode}, Response Body${response.body}");
+          "Response Code: ${response?.statusCode}, Response Body${response?.body}");
     }
   }
 
@@ -101,14 +105,21 @@ class _PaystackPayNowState extends State<PaystackPayNow> {
           'Authorization': 'Bearer ${widget.secretKey}',
         },
       );
-    } on Exception catch (_) {
-      /// In the event of an exception, take the user back and show a SnackBar error.
+    } on Exception catch (e) {
+      // Catch both SocketException and HttpException here
+      String errorMessage = "An unexpected error occurred. Please try again.";
+
+      // Check if the exception is a SocketException or HttpException
+      if (e is SocketException) {
+        errorMessage =
+            "No internet connection. Please check your connection and try again.";
+      } else if (e is HttpException) {
+        errorMessage = "Please check your internet connection.";
+      }
+
       if (context.mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        var snackBar = const SnackBar(
-            content: Text("Fatal error occurred, Please check your internet"));
-        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+        widget.transactionNotCompleted(errorMessage);
       }
     }
     if (response!.statusCode == 200) {
@@ -118,7 +129,8 @@ class _PaystackPayNowState extends State<PaystackPayNow> {
         widget.transactionCompleted(decodedRespBody);
       } else {
         widget.transactionNotCompleted(
-            decodedRespBody["data"]["status"].toString());
+          decodedRespBody["data"]["status"].toString(),
+        );
       }
     } else {
       /// Anything else means there is an issue
