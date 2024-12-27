@@ -187,7 +187,7 @@ class _PaystackPayNowState extends State<PaystackPayNow> {
                       },
                       child: const Padding(
                         padding: EdgeInsets.only(right: 8),
-                        child: Icon(Icons.close, size: 24),
+                        child: Icon(Icons.close, size: 30),
                       ),
                     ),
                   ],
