@@ -1,5 +1,6 @@
 // ignore_for_file: prefer_typing_uninitialized_variables, use_build_context_synchronously
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
@@ -52,8 +53,9 @@ class _PaystackPayNowState extends State<PaystackPayNow> {
     final amount = widget.amount * 100;
 
     try {
-      // Sending data to Paystack.
-      response = await http.post(
+      // Sending data to Paystack with a timeout.
+      response = await http
+          .post(
         Uri.parse('https://api.paystack.co/transaction/initialize'),
         headers: {
           'Content-Type': 'application/json',
@@ -67,9 +69,24 @@ class _PaystackPayNowState extends State<PaystackPayNow> {
           "plan": widget.plan,
           "metadata": widget.metadata,
           "callback_url": widget.callbackUrl,
-          "channels": widget.paymentChannel
+          "channels": widget.paymentChannel,
         }),
+      )
+          .timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw TimeoutException(
+              "The request took too long. Please try again later.");
+        },
       );
+    } on TimeoutException catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        widget.transactionNotCompleted(
+          TransactionErrorType.unexpectedError,
+          e.message ?? "Request timeout occurred.",
+        );
+      }
     } on Exception catch (e) {
       var errorType = TransactionErrorType.unexpectedError;
 
