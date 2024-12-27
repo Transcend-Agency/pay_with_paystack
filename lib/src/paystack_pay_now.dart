@@ -10,6 +10,8 @@ import 'package:pay_with_paystack/src/widgets/app_loader.dart';
 import 'package:pay_with_paystack/src/widgets/custom_app_bar.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import 'utils/error.dart';
+
 class PaystackPayNow extends StatefulWidget {
   final String secretKey;
   final String reference;
@@ -22,7 +24,8 @@ class PaystackPayNow extends StatefulWidget {
   final paymentChannel;
   final void Function(Map<String, dynamic> decodedRespBody)
       transactionCompleted;
-  final void Function(String reason) transactionNotCompleted;
+  final void Function(TransactionErrorType errorType, String reason)
+      transactionNotCompleted;
 
   const PaystackPayNow({
     Key? key,
@@ -68,20 +71,15 @@ class _PaystackPayNowState extends State<PaystackPayNow> {
         }),
       );
     } on Exception catch (e) {
-      // Catch both SocketException and HttpException here
-      String errorMessage = "An unexpected error occurred. Please try again.";
+      var errorType = TransactionErrorType.unexpectedError;
 
-      // Check if the exception is a SocketException or HttpException
-      if (e is SocketException) {
-        errorMessage =
-            "No internet connection. Please check your connection and try again.";
-      } else if (e is HttpException) {
-        errorMessage = "Please check your internet connection.";
+      if (e is SocketException || e is HttpException) {
+        errorType = TransactionErrorType.noInternetConnection;
       }
 
       if (context.mounted) {
         Navigator.pop(context);
-        widget.transactionNotCompleted(errorMessage);
+        widget.transactionNotCompleted(errorType, e.toString());
       }
     }
 
@@ -106,20 +104,15 @@ class _PaystackPayNowState extends State<PaystackPayNow> {
         },
       );
     } on Exception catch (e) {
-      // Catch both SocketException and HttpException here
-      String errorMessage = "An unexpected error occurred. Please try again.";
+      var errorType = TransactionErrorType.unexpectedError;
 
-      // Check if the exception is a SocketException or HttpException
-      if (e is SocketException) {
-        errorMessage =
-            "No internet connection. Please check your connection and try again.";
-      } else if (e is HttpException) {
-        errorMessage = "Please check your internet connection.";
+      if (e is SocketException || e is HttpException) {
+        errorType = TransactionErrorType.noInternetConnection;
       }
 
       if (context.mounted) {
         Navigator.pop(context);
-        widget.transactionNotCompleted(errorMessage);
+        widget.transactionNotCompleted(errorType, e.toString());
       }
     }
     if (response!.statusCode == 200) {
@@ -129,6 +122,7 @@ class _PaystackPayNowState extends State<PaystackPayNow> {
         widget.transactionCompleted(decodedRespBody);
       } else {
         widget.transactionNotCompleted(
+          TransactionErrorType.transactionFailed,
           decodedRespBody["data"]["status"].toString(),
         );
       }

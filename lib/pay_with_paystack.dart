@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:pay_with_paystack/src/paystack_pay_now.dart';
 import 'package:uuid/uuid.dart';
 
+import 'src/utils/error.dart';
+
 /// Main class, use the [now] method and provide arguments like;
 /// secret [secretKey], [reference], [currency], [email], [email], [paymentChannel] and [amount].
 class PayWithPayStack {
@@ -38,7 +40,7 @@ class PayWithPayStack {
     required Function(Map<String, dynamic>) transactionCompleted,
 
     /// What happens next after transaction is not completed
-    required Function(String) transactionNotCompleted,
+    required Function(TransactionErrorType, String) transactionNotCompleted,
 
     /// Extra data not consumed by Paystack but for developer purposes
     Object? metaData,
